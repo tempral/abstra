@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>websocket-chat</title>
+    <meta name="theme-color" content="#9ACD32">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+  <style>
+body {
+  font-family: "Lato", sans-serif;
+  background-color: yellow;
+}
+
+.sidenav {
+  height: 42px;
+  width: 100%;
+  position: fixed;
+  z-index: 1;
+  bottom: 0;
+  right: 0;
+  background-color: yellow;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  transition: 1s;
+ // padding-top: 00px;
+  padding: 8px;
+}
+    :focus {
+    outline: 0;
+    /* or */
+    outline: none;
+}
+/*
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+}*/
+</style>
+  
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+  
+</head>
+<body>
+<div class="container" >
+  <h1>WebSocket-Chat</h1>
+  <form class="" id="form1">
+      <label class="roomLabel" for="rooms">Room：</label>  <!-- 部屋 -->
+      <select class="" id="rooms">
+        <option value="room01">Room 01</option>  
+        <option value="room02">Room 02</option>  
+      </select>
+    
+<div id="mySidenav" class="sidenav">
+      <!--<label class="nameLabel" for="msgForm" id="lab1">Name：</label> 名前 -->
+      <textarea  rows="1" class="" id="msgForm" placeholder="Type a message"
+             style="background-color: pink;border: 2px solid green; margin-left: 16px;border-radius: 24px; font-size: 18px;  padding: 8px;"></textarea>
+      <button type="submit" class="" id="sendButton" style="border-radius: 0px; font-size: 20px;">Enter</button>
+</div>
+  </form>
+
+<div id="chatLogs" style="margin-bottom: 64px;"></div>
+</div>
+
+<script type="text/javascript">
+
+  var ping = 0;
+  var ord = 0;
+  let socket = io.connect(); // C02. ソケットへの接続
+  let isEnter = false;
+  let name = '';
+
+  // C04. server_to_clientイベント・データを受信する
+  socket.on("server_to_client", function(data){appendMsg(data.value)});
+  function appendMsg(text) {
+    var d2 = new Date();
+    var pong = d2.getMilliseconds()-ping;
+    document.getElementById("chatLogs").innerHTML += "<div>" + text + pong + "</div>";
+  }
+
+  document.getElementById("form1").onsubmit = function(e) {
+    let message = document.getElementById('msgForm').value;
+    let selectRoom = document.getElementById('rooms').value;
+    document.getElementById('msgForm').value = '';
+    if (isEnter) {
+      message = "[" + name + "]: " + message + (++ord) +"   ";
+      var d3 = new Date;
+      ping = d3.getMilliseconds();
+      // C03. client_to_serverイベント・データを送信する
+      socket.emit("client_to_server", {value : message});
+    } else {
+      name = message;
+      var d1 = new Date;
+      ping = d1.getMilliseconds();
+      let entryMessage = name + " has entered the room";//さんが入室しました。
+      socket.emit("client_to_server_join", {value : selectRoom});
+      // C05. client_to_server_broadcastイベント・データを送信する
+      socket.emit("client_to_server_broadcast", {value : entryMessage});
+      // C06. client_to_server_personalイベント・データを送信する
+      socket.emit("client_to_server_personal", {value : name});
+      changeLabel();
+    }
+    e.preventDefault();
+  };
+
+  function changeLabel() {
+    //document.getElementById("lab1").innerHTML="Message：";
+    document.getElementById("rooms").disabled=true;
+    document.getElementById("sendButton").innerHTML="Send";
+    isEnter = true;
+  }
+
+</script>
+</body>
+</html>
