@@ -5,7 +5,7 @@ const socketio = require('socket.io');
 const server = http.createServer((req, res) => {
   res.writeHead(200, {'Content-Type' : 'text/html'});
   res.end(fs.readFileSync(__dirname + '/index.html', 'utf-8'));
-}).listen(3000);
+}).listen(process.env.PORT);
 
 // S03. HTTPサーバにソケットをひも付ける（WebSocket有効化）
 const io = socketio.listen(server);
